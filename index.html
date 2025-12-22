@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spyfall Online</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --primary: #00d2d3; --bg: #1e272e; --card: #2f3640; --text: #f5f6fa; --card-radius: 24px; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Vazirmatn'; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .screen { position: absolute; width: 100%; max-width: 400px; height: 90vh; display: none; flex-direction: column; align-items: center; animation: fadeIn 0.3s; }
+        .active { display: flex; }
+        .card { width: 100%; background: var(--card); padding: 25px; border-radius: var(--card-radius); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
+        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-family: inherit; font-size: 1rem; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: #1e272e; }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #576574; background: #1e272e; color: #fff; margin-bottom: 15px; text-align: center; font-family: inherit; }
+        .timer { font-size: 3rem; font-weight: 900; color: var(--primary); margin: 20px 0; }
+        .role-box { width: 100%; height: 120px; background: var(--primary); color: #1e272e; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- صفحه ورود -->
+    <div id="screen-start" class="screen active">
+        <h1 style="color:var(--primary)">جاسوس آنلاین</h1>
+        <div class="card">
+            <input type="text" id="player-name" placeholder="نام نمایشی شما">
+            <button class="btn btn-primary" onclick="createRoom()">➕ ساخت اتاق جدید</button>
+            <input type="text" id="join-code" placeholder="کد اتاق">
+            <button class="btn btn-secondary" onclick="joinRoom()">🚪 ورود به اتاق</button>
+        </div>
+    </div>
+
+    <!-- صفحه لابی -->
+    <div id="screen-lobby" class="screen">
+        <h2>لابی انتظار</h2>
+        <div class="card">
+            <div style="font-size: 1.5rem;">کد اتاق: <b id="display-code" style="color:var(--primary)">----</b></div>
+            <div id="player-list" style="margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+            <button class="btn btn-primary" id="start-btn" onclick="hostStartGame()" style="display:none">🚀 شروع بازی</button>
+            <p id="wait-msg">منتظر ادمین برای شروع...</p>
+        </div>
+    </div>
+
+    <!-- صفحه بازی -->
+    <div id="screen-game" class="screen">
+        <div class="timer" id="game-timer">05:00</div>
+        <div class="role-box" id="role-card" onclick="toggleRole()">لمس برای دیدن کلمه</div>
+        <div class="card" style="flex-grow:1">
+            <p>بازیکنان حاضر:</p>
+            <div id="game-players" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. تنظیمات شما
+        const firebaseConfig = {
+            databaseURL: "https://spyfall-5a664-default-rtdb.europe-west1.firebasedatabase.app/"
+        };
+        const GAS_URL = "لینک_دیپلوی_گوگل_اسکریپت_شما";
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        let myId = "UID_" + Math.floor(Math.random() * 10000);
+        let myName = "";
+        let roomCode = "";
+        let allWords = [];
+
+        // دریافت کلمات از گوگل شیت
+        fetch(GAS_URL).then(res => res.json()).then(data => { allWords = data.words; });
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + id).classList.add('active');
+        }
+
+        function createRoom() {
+            myName = document.getElementById('player-name').value || "پلیر";
+            roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+            db.ref('rooms/' + roomCode).set({
+                host: myId,
+                status: 'waiting',
+                players: { [myId]: { name: myName } }
+            });
+            initLobby();
+        }
+
+        function joinRoom() {
+            roomCode = document.getElementById('join-code').value.toUpperCase();
+            myName = document.getElementById('player-name').value || "پلیر";
+            if(!roomCode) return alert("کد را بزن");
+            db.ref('rooms/' + roomCode + '/players/' + myId).set({ name: myName });
+            initLobby();
+        }
+
+        function initLobby() {
+            showScreen('lobby');
+            document.getElementById('display-code').innerText = roomCode;
+            db.ref('rooms/' + roomCode).on('value', snap => {
+                const data = snap.val();
+                if(!data) return;
+                
+                // لیست پلیرها
+                const list = document.getElementById('player-list');
+                list.innerHTML = "";
+                Object.values(data.players).forEach(p => {
+                    list.innerHTML += `<div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:10px">👤 ${p.name}</div>`;
+                });
+
+                if(data.host === myId) document.getElementById('start-btn').style.display = "block";
+                if(data.status === 'playing') startGame(data);
+            });
+        }
+
+        function hostStartGame() {
+            const wordObj = allWords[Math.floor(Math.random() * allWords.length)];
+            const players = Object.keys((document.getElementById('player-list').childNodes, {})); // ساده شده
+            db.ref('rooms/' + roomCode + '/players').once('value', snap => {
+                const ids = Object.keys(snap.val());
+                const spyId = ids[Math.floor(Math.random() * ids.length)];
+                db.ref('rooms/' + roomCode).update({
+                    status: 'playing',
+                    word: wordObj.w,
+                    spy: spyId,
+                    endTime: Date.now() + 300000
+                });
+            });
+        }
+
+        function startGame(data) {
+            showScreen('game');
+            window.myRole = (myId === data.spy) ? "🕵️ شما جاسوس هستید!" : "📍 کلمه: " + data.word;
+            
+            // تایمر
+            setInterval(() => {
+                const diff = data.endTime - Date.now();
+                if(diff <= 0) return document.getElementById('game-timer').innerText = "00:00";
+                const m = Math.floor(diff/60000);
+                const s = Math.floor((diff%60000)/1000);
+                document.getElementById('game-timer').innerText = `${m}:${s<10?'0':''}${s}`;
+            }, 1000);
+        }
+
+        function toggleRole() {
+            const card = document.getElementById('role-card');
+            if(card.innerText === "لمس برای دیدن کلمه") {
+                card.innerText = window.myRole;
+                card.style.background = "#fff";
+            } else {
+                card.innerText = "لمس برای دیدن کلمه";
+                card.style.background = "var(--primary)";
+            }
+        }
+    </script>
+</body>
+</html>
