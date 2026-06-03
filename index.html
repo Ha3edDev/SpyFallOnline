@@ -365,6 +365,15 @@ function render(d,rows){
   el.appendChild(makeScoreSection(rows));
   tableRows=[...rows];
   el.appendChild(makeTableSection(rows));
+
+    // ✅ اینجا المان توی DOM هست
+  const srch=document.getElementById('tblSearch');
+  if(srch) srch.addEventListener('input',e=>{
+    filterQ=e.target.value.trim().toLowerCase();
+    tablePage=1;
+    filterTable();
+  });
+  
   renderCharts(d,rows);
 }
 
@@ -628,7 +637,6 @@ function makeTableSection(rows){
     </table></div>
     <div class="pager" id="tblPager"></div>`;
   s.appendChild(wrap);
-  document.getElementById('tblSearch').addEventListener('input',e=>{filterQ=e.target.value.trim().toLowerCase();tablePage=1;filterTable();});
   return s;
 }
 
