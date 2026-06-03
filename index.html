@@ -1,161 +1,760 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spyfall Online</title>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <style>
-        :root { --primary: #00d2d3; --bg: #1e272e; --card: #2f3640; --text: #f5f6fa; --card-radius: 24px; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Vazirmatn'; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        .screen { position: absolute; width: 100%; max-width: 400px; height: 90vh; display: none; flex-direction: column; align-items: center; animation: fadeIn 0.3s; }
-        .active { display: flex; }
-        .card { width: 100%; background: var(--card); padding: 25px; border-radius: var(--card-radius); box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; }
-        .btn { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-family: inherit; font-size: 1rem; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: #1e272e; }
-        .btn-secondary { background: rgba(255,255,255,0.1); color: white; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #576574; background: #1e272e; color: #fff; margin-bottom: 15px; text-align: center; font-family: inherit; }
-        .timer { font-size: 3rem; font-weight: 900; color: var(--primary); margin: 20px 0; }
-        .role-box { width: 100%; height: 120px; background: var(--primary); color: #1e272e; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>F.R.I.D.A.Y — Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Vazirmatn:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg0:#02000a; --bg1:#06020f; --bg2:#0d0520; --bg3:#140830;
+  --border:rgba(140,80,255,0.12); --border2:rgba(140,80,255,0.28);
+  --text1:#e8d8ff; --text2:#a080d0; --text3:#5a3a80;
+  --accent:#a855f7; --accent2:#e879f9; --accent3:#60a5fa; --accent4:#34d399;
+  --glow:rgba(168,85,247,0.35); --glow2:rgba(232,121,249,0.2);
+  --card:rgba(140,80,255,0.07); --card-b:rgba(140,80,255,0.14);
+  --glass:rgba(10,4,28,0.85); --glass-b:rgba(168,85,247,0.22);
+  --risk-low:#34d399; --risk-mid:#fbbf24; --risk-high:#ef4444;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{background:var(--bg0);color:var(--text1);font-family:'Vazirmatn',sans-serif;font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+
+/* STARS */
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.7}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:100;background:var(--glass);backdrop-filter:blur(24px);border-bottom:1px solid var(--glass-b);padding:0 20px}
+.header::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent) 30%,var(--accent2) 60%,transparent)}
+.hdr-inner{height:56px;display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+.hdr-brand{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--accent);letter-spacing:4px}
+.hdr-sub{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:2px;margin-top:2px}
+.hdr-center{flex:1;display:flex;flex-direction:column;align-items:center}
+.hdr-right{display:flex;align-items:center;gap:8px;margin-right:0;margin-left:0}
+.hdr-right-group{display:flex;align-items:center;gap:8px}
+.hdr-clock{font-family:'Space Mono',monospace;font-size:11px;color:var(--text2);letter-spacing:1px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-btn{background:var(--card);border:1px solid var(--border2);color:var(--text2);border-radius:9px;padding:5px 12px;font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.refresh-btn:hover{background:var(--glow);color:var(--accent);border-color:var(--accent)}
+.refresh-btn:active{transform:scale(.95)}
+
+/* LAYOUT */
+.container{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:20px 16px 60px}
+
+/* SECTION */
+.section{margin-bottom:28px}
+.section-title{font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:700px){.grid4{grid-template-columns:repeat(2,1fr)}.grid3{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.grid2{grid-template-columns:1fr}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--card-b);border-radius:16px;padding:16px}
+.card-accent{border-color:var(--accent);background:rgba(168,85,247,0.09);position:relative;overflow:hidden}
+.card-accent::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+/* HERO NUMBERS */
+.hero-num{font-family:'Orbitron',monospace;font-size:40px;font-weight:900;color:var(--accent);line-height:1;text-shadow:0 0 30px var(--glow)}
+.hero-num.c2{color:var(--accent2)}
+.hero-num.c3{color:var(--accent4);font-size:28px}
+.hero-lbl{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);letter-spacing:2px;margin-bottom:6px}
+.hero-sub{font-size:10px;color:var(--text2);margin-top:4px}
+
+/* BAR CHART */
+.bar-wrap{display:flex;align-items:flex-end;gap:5px;height:90px;margin-top:8px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%}
+.bar-fill-wrap{flex:1;width:100%;display:flex;align-items:flex-end}
+.bar-fill{width:100%;border-radius:3px 3px 0 0;background:var(--accent);opacity:.65;min-height:2px;transition:height .8s cubic-bezier(.34,1.56,.64,1)}
+.bar-fill.today{background:var(--accent2);opacity:1;box-shadow:0 -3px 12px var(--glow)}
+.bar-val{font-size:9px;color:var(--text2);font-family:'Space Mono',monospace}
+.bar-day{font-size:9px;color:var(--text3)}
+
+/* INLINE LIST */
+.ilist{display:flex;flex-direction:column;gap:7px}
+.irow{display:flex;align-items:center;gap:8px}
+.irow-rank{font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);width:18px;flex-shrink:0}
+.irow-lbl{font-size:11px;color:var(--text1);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.irow-bar-wrap{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.irow-bar{height:100%;border-radius:3px;background:var(--accent)}
+.irow-cnt{font-family:'Orbitron',monospace;font-size:10px;color:var(--accent);width:24px;text-align:left;flex-shrink:0}
+.irow-pct{font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;width:30px;flex-shrink:0}
+
+/* RISK */
+.risk-dist{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.risk-card{padding:12px 8px;border-radius:12px;background:var(--bg2);text-align:center}
+.risk-card.low{border:1px solid rgba(52,211,153,.35)}
+.risk-card.mid{border:1px solid rgba(251,191,36,.35)}
+.risk-card.high{border:1px solid rgba(239,68,68,.35)}
+.risk-num{font-family:'Orbitron',monospace;font-size:26px;font-weight:900;line-height:1}
+.risk-card.low .risk-num{color:var(--risk-low)}
+.risk-card.mid .risk-num{color:var(--risk-mid)}
+.risk-card.high .risk-num{color:var(--risk-high)}
+.risk-pct{font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px}
+.risk-lbl{font-size:9px;color:var(--text2);margin-top:4px}
+.risk-avg-bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:6px}
+.risk-avg-fill{height:100%;border-radius:3px}
+.risk-badge{display:inline-block;font-family:'Space Mono',monospace;font-size:10px;padding:3px 10px;border-radius:8px;font-weight:700}
+.risk-badge.low{background:rgba(52,211,153,.15);color:var(--risk-low);border:1px solid rgba(52,211,153,.3)}
+.risk-badge.mid{background:rgba(251,191,36,.15);color:var(--risk-mid);border:1px solid rgba(251,191,36,.3)}
+.risk-badge.high{background:rgba(239,68,68,.15);color:var(--risk-high);border:1px solid rgba(239,68,68,.3)}
+
+/* Q ANALYSIS */
+.q-card{padding:13px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);margin-bottom:9px}
+.q-head{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.q-num{font-family:'Space Mono',monospace;font-size:9px;color:var(--accent);flex:1}
+.q-time{font-family:'Orbitron',monospace;font-size:8px;color:var(--accent3);background:rgba(96,165,250,.1);padding:2px 8px;border-radius:6px}
+.q-total{font-size:8px;color:var(--text3);font-family:'Space Mono',monospace}
+.q-ans-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.q-ans-lbl{font-size:10px;color:var(--text2);width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-bar-wrap{width:90px;flex-shrink:0;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.q-bar{height:100%;border-radius:2px;background:var(--accent)}
+.q-pct{font-family:'Space Mono',monospace;font-size:8px;color:var(--accent);width:28px;text-align:left;flex-shrink:0}
+
+/* AVATAR */
+.av-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:600px){.av-grid{grid-template-columns:repeat(3,1fr)}}
+.av-card{padding:12px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);text-align:center;position:relative}
+.av-card.top{border-color:var(--accent)}
+.av-crown{position:absolute;top:6px;right:8px;font-size:11px}
+.av-img{width:46px;height:46px;border-radius:10px;image-rendering:pixelated;border:2px solid var(--border2);margin:0 auto 6px;display:block}
+.av-fb{width:46px;height:46px;border-radius:10px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 6px}
+.av-name{font-size:10px;font-weight:700;color:var(--text1)}
+.av-count{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;color:var(--accent);line-height:1}
+.av-pct{font-size:8px;color:var(--text3);font-family:'Space Mono',monospace}
+.av-bar-wrap{width:100%;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:5px}
+.av-bar{height:100%;background:var(--accent);border-radius:2px}
+
+/* SPEED */
+.speed-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sp-card{padding:12px 8px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);text-align:center}
+.sp-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--accent4);line-height:1}
+.sp-lbl{font-size:8px;color:var(--text3);margin-top:4px}
+
+/* SCORE BARS */
+.score-bars{display:flex;flex-direction:column;gap:9px}
+.sc-row{display:flex;align-items:center;gap:8px}
+.sc-lbl{font-size:10px;color:var(--text2);width:28px;flex-shrink:0;text-align:left}
+.sc-bar-wrap{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.sc-bar{height:100%;border-radius:4px}
+.sc-val{font-family:'Orbitron',monospace;font-size:9px;color:var(--text1);width:60px;flex-shrink:0}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border)}
+.tbl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.tbl-search{background:rgba(140,80,255,.08);border:1px solid var(--border2);border-radius:10px;padding:8px 14px;color:var(--text1);font-family:'Vazirmatn',sans-serif;font-size:12px;outline:none;flex:1;min-width:180px;transition:border-color .2s}
+.tbl-search::placeholder{color:var(--text3)}
+.tbl-search:focus{border-color:var(--accent)}
+.tbl-select{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;color:var(--text1);font-family:'Vazirmatn',sans-serif;font-size:12px;outline:none;cursor:pointer}
+.tbl-count{font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px}
+th{background:var(--bg2);color:var(--text3);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;padding:10px 12px;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;cursor:pointer;user-select:none;transition:color .2s}
+th:hover{color:var(--accent)}
+th.sort-asc::after{content:' ↑'}
+th.sort-desc::after{content:' ↓'}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(140,80,255,.04)}
+.td-name{color:var(--text1);font-weight:600;white-space:nowrap}
+.td-date{font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);white-space:nowrap}
+.td-avatar{image-rendering:pixelated;border-radius:6px;border:1px solid var(--border2)}
+.td-score{font-family:'Orbitron',monospace;font-size:11px;font-weight:700}
+.pager{display:flex;gap:6px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.pager-btn{background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Space Mono',monospace;font-size:10px;padding:5px 11px;cursor:pointer;transition:all .2s}
+.pager-btn:hover,.pager-btn.active{background:var(--glow);border-color:var(--accent);color:var(--accent)}
+.pager-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 0;gap:14px}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-family:'Space Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:1px}
+.error-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:16px;text-align:center;color:#ef4444;font-family:'Space Mono',monospace;font-size:11px}
+.sk{background:var(--bg2);border-radius:12px;animation:skp 1.8s ease-in-out infinite}
+@keyframes skp{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* CHART CONTAINER */
+.chart-box{position:relative;width:100%;height:220px}
+.chart-box-sm{position:relative;width:100%;height:160px}
+
+/* TOOLTIP */
+.custom-tooltip{position:fixed;background:var(--glass);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-family:'Vazirmatn',sans-serif;font-size:11px;color:var(--text1);pointer-events:none;z-index:999;max-width:260px;backdrop-filter:blur(12px);display:none;line-height:1.7}
+
+/* PILL TAG */
+.pill{display:inline-block;font-size:9px;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text3)}
+.pill.g{background:rgba(96,165,250,.1);color:var(--accent3);border-color:rgba(96,165,250,.25)}
+.pill.a{background:rgba(168,85,247,.1);color:var(--accent);border-color:rgba(168,85,247,.25)}
+
+/* EXPAND ROW */
+.expand-row td{padding:0!important;border-bottom:1px solid var(--border2)}
+.expand-inner{padding:12px 16px;background:rgba(140,80,255,.04);display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.ans-pill{font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text2);display:flex;align-items:flex-start;gap:5px;line-height:1.4}
+.ans-q{color:var(--text3);font-family:'Space Mono',monospace;font-size:8px;flex-shrink:0;margin-top:2px}
+
+/* COHORT */
+.cohort-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.cohort-card{padding:12px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);text-align:center}
+.cohort-name{font-size:10px;color:var(--text2);margin-bottom:5px}
+.cohort-num{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--accent3);line-height:1}
+.cohort-risk{font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:3px}
+
+/* PROFILE */
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.profile-card{padding:11px;border-radius:11px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.profile-icon{font-size:18px;flex-shrink:0}
+.profile-name{font-size:10px;font-weight:700;color:var(--text1)}
+.profile-cnt{font-family:'Orbitron',monospace;font-size:15px;color:var(--accent);line-height:1}
+.profile-pct{font-size:8px;color:var(--text3);font-family:'Space Mono',monospace}
+
+/* MOBILE HEADER */
+@media(max-width:560px){
+  .hdr-brand{font-size:13px;letter-spacing:2px}
+  .hdr-right-group{gap:5px}
+  .refresh-btn{padding:4px 8px;font-size:9px}
+}
+</style>
 </head>
 <body>
 
-    <!-- صفحه ورود -->
-    <div id="screen-start" class="screen active">
-        <h1 style="color:var(--primary)">جاسوس آنلاین</h1>
-        <div class="card">
-            <input type="text" id="player-name" placeholder="نام نمایشی شما">
-            <button class="btn btn-primary" onclick="createRoom()">➕ ساخت اتاق جدید</button>
-            <input type="text" id="join-code" placeholder="کد اتاق">
-            <button class="btn btn-secondary" onclick="joinRoom()">🚪 ورود به اتاق</button>
-        </div>
+<canvas id="stars"></canvas>
+
+<div class="header">
+  <div class="hdr-inner">
+    <div class="hdr-center">
+      <div class="hdr-brand">F.R.I.D.A.Y</div>
+      <div class="hdr-sub">// ANALYTICS DASHBOARD</div>
     </div>
-
-    <!-- صفحه لابی -->
-    <div id="screen-lobby" class="screen">
-        <h2>لابی انتظار</h2>
-        <div class="card">
-            <div style="font-size: 1.5rem;">کد اتاق: <b id="display-code" style="color:var(--primary)">----</b></div>
-            <div id="player-list" style="margin: 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
-            <button class="btn btn-primary" id="start-btn" onclick="hostStartGame()" style="display:none">🚀 شروع بازی</button>
-            <p id="wait-msg">منتظر ادمین برای شروع...</p>
-        </div>
+    <div class="hdr-right-group">
+      <div class="live-dot"></div>
+      <div class="hdr-clock" id="clock">--:--</div>
+      <button class="refresh-btn" onclick="loadAll()">↺ REFRESH</button>
     </div>
+  </div>
+</div>
 
-    <!-- صفحه بازی -->
-    <div id="screen-game" class="screen">
-        <div class="timer" id="game-timer">05:00</div>
-        <div class="role-box" id="role-card" onclick="toggleRole()">لمس برای دیدن کلمه</div>
-        <div class="card" style="flex-grow:1">
-            <p>بازیکنان حاضر:</p>
-            <div id="game-players" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;"></div>
-        </div>
+<div class="container" id="main">
+  <div class="loading"><div class="spinner"></div><div class="loading-txt">// LOADING DATA...</div></div>
+</div>
+
+<div class="custom-tooltip" id="tooltip"></div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwLCQxFGF3TDZshRt9MBtaOUgvGxg0ua_-DYftDHCsmUAKMlco3sHy7a9ytDRzOaWuP/exec';
+
+// ─── STARS ───
+(function(){
+  const c=document.getElementById('stars'),ctx=c.getContext('2d');let st=[];
+  function resize(){c.width=innerWidth;c.height=innerHeight;st=[];for(let i=0;i<180;i++)st.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.7+.2,sp:Math.random()*.2+.03,tw:Math.random()*Math.PI*2,tws:Math.random()*.03+.007});}
+  function draw(){ctx.clearRect(0,0,c.width,c.height);st.forEach(s=>{s.tw+=s.tws;const op=.3+Math.sin(s.tw)*.7;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(168,85,247,${op.toFixed(2)})`;ctx.fill();s.y+=s.sp;if(s.y>c.height){s.y=0;s.x=Math.random()*c.width;}});requestAnimationFrame(draw);}
+  addEventListener('resize',resize);resize();draw();
+})();
+
+// ─── CLOCK ───
+function tick(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Asia/Tehran'});}
+tick();setInterval(tick,15000);
+
+// ─── PIXEL AVATAR ───
+const AV_DATA={
+  "محافظه‌کار":{hair:"#5D3A1A",shirt:"#2C3E50",pants:"#1a252f",skin:"#FDDBB4"},
+  "ریسک‌پذیر":{hair:"#111",shirt:"#C0392B",pants:"#922B21",skin:"#FDDBB4"},
+  "تحلیلگر":{hair:"#6D4C41",shirt:"#2471A3",pants:"#154360",skin:"#F5CBA7"},
+  "سوداگر":{hair:"#E74C3C",shirt:"#F39C12",pants:"#D35400",skin:"#FDDBB4"},
+  "آزاد":{hair:"#27AE60",shirt:"#1E8449",pants:"#196F3D",skin:"#FDDBB4"},
+  "رسمی":{hair:"#2C1810",shirt:"#1B2A4A",pants:"#0d1b2e",skin:"#FDDBB4"},
+  "صرفه‌جو":{hair:"#7D6608",shirt:"#B7950B",pants:"#7D6608",skin:"#FDDBB4"},
+  "نوآور":{hair:"#8E44AD",shirt:"#9B59B6",pants:"#6C3483",skin:"#FDDBB4"}
+};
+const AV_PX=["  hhhh  "," hssssh "," hssssh ","  bbbb  "," bbbbbb "," bbbbbb "," pp  pp "," pp  pp "];
+function makeAvatar(name,size=44){
+  const c=AV_DATA[name];if(!c)return null;
+  const cv=document.createElement('canvas');cv.width=size;cv.height=size;
+  const ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
+  const map={s:c.skin,h:c.hair,b:c.shirt,p:c.pants};
+  const cw=size/8,ch=size/AV_PX.length;
+  AV_PX.forEach((row,ri)=>{for(let ci=0;ci<8;ci++){const col=map[row[ci]];if(!col)return;ctx.fillStyle=col;ctx.fillRect(ci*cw,ri*ch,cw,ch);}});
+  return cv.toDataURL();
+}
+
+// ─── PARSE ROW ───
+function parseRow(obj){
+  const get=(k)=>{for(const key of Object.keys(obj)){if(key.trim()===k.trim()){const v=obj[key];return v!==null&&v!==undefined?String(v).trim():'';}}return '';};
+  const answers=[];
+  for(let q=1;q<=12;q++){
+    const ans=get(`س${q} – جواب`)||get(`س${q} - جواب`)||get(`س ${q} - جواب`)||'';
+    const cmt=get(`س${q} – نظر`)||get(`س${q} - نظر`)||'';
+    const time=get(`س${q} – زمان`)||get(`س${q} - زمان`)||'';
+    if(ans)answers.push({qId:q,answer:ans,comment:cmt||null,time:time?parseFloat(time):null});
+  }
+  const scores={};
+  for(let i=1;i<=8;i++){const v=get(`س${i} امتیاز`);if(v!=='')scores[i]=parseFloat(v)||0;}
+  let avatarVal='';
+  for(const k of Object.keys(obj)){if(k.includes('آواتار')){avatarVal=String(obj[k]||'').trim();break;}}
+  let genderVal='';
+  for(const k of Object.keys(obj)){if(k.includes('جنسیت')||k.includes('جمسیت')){genderVal=String(obj[k]||'').trim();break;}}
+  return{
+    date:get('تاریخ و ساعت'),
+    gender:genderVal,
+    province:get('استان'),
+    name:get('نام')||'—',
+    age:get('سن')||'—',
+    avatar:avatarVal,
+    theme:get('پوسته'),
+    source:get('منبع ورود'),
+    totalTime:parseFloat(get('⏳ جمع زمان (ثانیه)')||'0')||0,
+    unanswered:parseInt(get('❌ بی‌جواب')||'0')||0,
+    speed:get('📊 سرعت'),
+    risk:parseFloat(get('🎯 Risk Score')||'0')||0,
+    profile:get('profile'),
+    cohort:get('👥 Cohort'),
+    answers,scores
+  };
+}
+
+// ─── FETCH ───
+async function fetchData(page){
+  const r=await fetch(API+'?page='+page);
+  const j=await r.json();
+  return j.ok?j.data:null;
+}
+async function fetchFull(){
+  const r=await fetch(API+'?page=stats_full');
+  const j=await r.json();
+  return j.ok?j.data:null;
+}
+
+// ─── STATE ───
+let allRows=[];
+let tableRows=[];
+let tablePage=1;
+const PAGE_SIZE=20;
+let sortCol=null,sortDir=1;
+let filterQ='',filterGender='all',filterProfile='all',filterCohort='all';
+
+// ─── MAIN LOAD ───
+async function loadAll(){
+  document.getElementById('main').innerHTML='<div class="loading"><div class="spinner"></div><div class="loading-txt">// CONNECTING TO FRIDAY OS...</div></div>';
+  try{
+    const [statsRaw,full]=await Promise.all([fetchData('stats_data'),fetchFull()]);
+    allRows=(full&&full.rows)?full.rows.map(r=>parseRow(r)):[];
+    render(statsRaw,allRows);
+  }catch(e){
+    document.getElementById('main').innerHTML=`<div class="error-box">❌ خطا در اتصال به API<br><small>${e.message}</small></div>`;
+  }
+}
+
+// ─── RENDER ALL ───
+function render(d,rows){
+  const el=document.getElementById('main');
+  el.innerHTML='';
+  el.appendChild(makeHeroSection(d,rows));
+  el.appendChild(makeChartSection(d,rows));
+  el.appendChild(makeRiskSection(rows));
+  el.appendChild(makePeopleSection(rows));
+  el.appendChild(makeGeoSection(rows));
+  el.appendChild(makeAvatarSection(rows));
+  el.appendChild(makeProfileSection(rows));
+  el.appendChild(makeCohortSection(rows));
+  el.appendChild(makeQSection(rows));
+  el.appendChild(makeSpeedSection(rows));
+  el.appendChild(makeScoreSection(rows));
+  tableRows=[...rows];
+  el.appendChild(makeTableSection(rows));
+  renderCharts(d,rows);
+}
+
+// ─── HELPERS ───
+function sec(title){const d=document.createElement('div');d.className='section';const h=document.createElement('div');h.className='section-title';h.textContent=title;d.appendChild(h);return d;}
+function card(cls=''){const d=document.createElement('div');d.className='card '+(cls||'');return d;}
+function riskClass(s){return s<40?'low':s<70?'mid':'high';}
+function riskLabel(s){return s<40?'🟢 محافظه‌کار':s<70?'🟡 متعادل':'🔴 ریسک‌پذیر';}
+function fmtDate(s){if(!s)return'—';try{const d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('fa-IR',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit'});}catch(e){return s;}}
+function pct(a,b){return b?Math.round(a/b*100):0;}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ─── HERO ───
+function makeHeroSection(d,rows){
+  const s=sec('// خلاصه کلی');
+  const total=rows.length;
+  const week=d?d.week:0;
+  const today=d?d.today:0;
+  const sum7=d?(d.chart||[]).reduce((a,c)=>a+(c.val||0),0):0;
+  s.innerHTML+=`<div class="grid4">
+    <div class="card card-accent"><div class="hero-lbl">// TOTAL</div><div class="hero-num">${total}</div><div class="hero-sub">کل پاسخ‌دهندگان</div></div>
+    <div class="card"><div class="hero-lbl">// THIS WEEK</div><div class="hero-num c2">${week||0}</div><div class="hero-sub">این هفته</div></div>
+    <div class="card"><div class="hero-lbl">// TODAY</div><div class="hero-num c3">${today||0}</div><div class="hero-sub">امروز</div></div>
+    <div class="card"><div class="hero-lbl">// 7-DAY SUM</div><div class="hero-num" style="font-size:28px;color:var(--accent3)">${sum7||0}</div><div class="hero-sub">مجموع ۷ روز</div></div>
+  </div>`;
+  s.querySelector('.section-title').textContent='// خلاصه کلی';
+  return s;
+}
+
+// ─── CHART SECTION ───
+function makeChartSection(d,rows){
+  const s=sec('// فعالیت روزانه');
+  s.innerHTML+=`
+    <div class="grid2">
+      <div class="card"><div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:8px">// ۷ روز اخیر</div><div class="bar-wrap" id="bar7"></div></div>
+      <div class="card"><div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:8px">// روند ۳۰ روزه</div><div class="chart-box-sm"><canvas id="chart30" role="img" aria-label="نمودار روند ۳۰ روزه"></canvas></div></div>
+    </div>`;
+  s.querySelector('.section-title').textContent='// فعالیت روزانه';
+  return s;
+}
+
+// ─── RISK ───
+function makeRiskSection(rows){
+  const s=sec('// تحلیل ریسک');
+  if(!rows.length){s.innerHTML+='<div class="error-box" style="background:transparent">// داده‌ای موجود نیست</div>';return s;}
+  let low=0,mid=0,high=0;
+  const rvals=[];
+  rows.forEach(r=>{const v=r.risk;if(v>0)rvals.push(v);if(v<40)low++;else if(v<70)mid++;else high++;});
+  const tot=rows.length||1;
+  const avg=rvals.length?Math.round(rvals.reduce((a,b)=>a+b,0)/rvals.length):0;
+  const rc=riskClass(avg);
+  const rcolor=rc==='low'?'var(--risk-low)':rc==='mid'?'var(--risk-mid)':'var(--risk-high)';
+  s.innerHTML+=`
+    <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:${rcolor};line-height:1">${avg}</div>
+      <div style="flex:1"><div style="font-size:11px;color:var(--text2)">میانگین Risk Score</div><div class="risk-avg-bar"><div class="risk-avg-fill" style="width:${avg}%;background:${rcolor}"></div></div></div>
+      <span class="risk-badge ${rc}">${riskLabel(avg)}</span>
     </div>
+    <div class="risk-dist">
+      <div class="risk-card low"><div class="risk-num">${low}</div><div class="risk-pct">${pct(low,tot)}%</div><div class="risk-lbl">🟢 محافظه‌کار</div></div>
+      <div class="risk-card mid"><div class="risk-num">${mid}</div><div class="risk-pct">${pct(mid,tot)}%</div><div class="risk-lbl">🟡 متعادل</div></div>
+      <div class="risk-card high"><div class="risk-num">${high}</div><div class="risk-pct">${pct(high,tot)}%</div><div class="risk-lbl">🔴 ریسک‌پذیر</div></div>
+    </div>
+    <div style="margin-top:12px"><div class="chart-box-sm"><canvas id="riskChart" role="img" aria-label="نمودار توزیع ریسک"></canvas></div></div>`;
+  return s;
+}
 
-    <script>
-        // 1. تنظیمات شما
-        const firebaseConfig = {
-            databaseURL: "https://spyfall-5a664-default-rtdb.europe-west1.firebasedatabase.app/"
-        };
-        const GAS_URL = "لینک_دیپلوی_گوگل_اسکریپت_شما";
+// ─── PEOPLE ───
+function makePeopleSection(rows){
+  const s=sec('// جنسیت و سن');
+  if(!rows.length)return s;
+  const tot=rows.length||1;
+  const gMap={};rows.forEach(r=>{const g=r.gender||'نامشخص';gMap[g]=(gMap[g]||0)+1;});
+  const gMax=Math.max(...Object.values(gMap),1);
+  const gHtml=Object.entries(gMap).map(([g,c])=>`<div class="irow"><div class="irow-lbl">${g==='مرد'?'👨 مرد':g==='زن'?'👩 زن':'👤 '+g}</div><div class="irow-bar-wrap"><div class="irow-bar" style="width:${pct(c,gMax)}%"></div></div><div class="irow-cnt">${c}</div><div class="irow-pct">${pct(c,tot)}%</div></div>`).join('');
+  const ag={'زیر ۲۰':0,'۲۰–۳۰':0,'۳۰–۴۰':0,'۴۰–۵۰':0,'بالای ۵۰':0};
+  rows.forEach(r=>{const a=parseInt(r.age)||0;if(a<20)ag['زیر ۲۰']++;else if(a<30)ag['۲۰–۳۰']++;else if(a<40)ag['۳۰–۴۰']++;else if(a<50)ag['۴۰–۵۰']++;else ag['بالای ۵۰']++;});
+  const agMax=Math.max(...Object.values(ag),1);
+  const agHtml=Object.entries(ag).map(([g,c])=>`<div class="irow"><div class="irow-lbl">${g}</div><div class="irow-bar-wrap"><div class="irow-bar" style="width:${pct(c,agMax)}%;background:var(--accent2)"></div></div><div class="irow-cnt">${c}</div><div class="irow-pct">${pct(c,tot)}%</div></div>`).join('');
+  const srcMap={};rows.forEach(r=>{const src=r.source||'مستقیم';srcMap[src]=(srcMap[src]||0)+1;});
+  const srcMax=Math.max(...Object.values(srcMap),1);
+  const srcHtml=Object.entries(srcMap).sort((a,b)=>b[1]-a[1]).map(([s,c])=>`<div class="irow"><div class="irow-lbl">${s}</div><div class="irow-bar-wrap"><div class="irow-bar" style="width:${pct(c,srcMax)}%;background:var(--accent3)"></div></div><div class="irow-cnt">${c}</div><div class="irow-pct">${pct(c,tot)}%</div></div>`).join('');
+  s.innerHTML+=`<div class="grid3">
+    <div class="card"><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-bottom:8px">// جنسیت</div><div class="ilist">${gHtml}</div></div>
+    <div class="card"><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-bottom:8px">// گروه سنی</div><div class="ilist">${agHtml}</div></div>
+    <div class="card"><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-bottom:8px">// منبع ورود</div><div class="ilist">${srcHtml}</div></div>
+  </div>`;
+  return s;
+}
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let myId = "UID_" + Math.floor(Math.random() * 10000);
-        let myName = "";
-        let roomCode = "";
-        let allWords = [];
+// ─── GEO ───
+function makeGeoSection(rows){
+  const s=sec('// جغرافیا (استان)');
+  if(!rows.length)return s;
+  const pMap={};rows.forEach(r=>{if(r.province)pMap[r.province]=(pMap[r.province]||0)+1;});
+  const arr=Object.entries(pMap).sort((a,b)=>b[1]-a[1]);
+  if(!arr.length)return s;
+  const mx=arr[0][1];
+  const html=arr.map(([p,c],i)=>`<div class="irow"><div class="irow-rank">#${i+1}</div><div class="irow-lbl">${p}</div><div class="irow-bar-wrap"><div class="irow-bar" style="width:${pct(c,mx)}%;background:var(--accent3)"></div></div><div class="irow-cnt">${c}</div></div>`).join('');
+  s.innerHTML+=`<div class="card"><div class="ilist">${html}</div></div>`;
+  return s;
+}
 
-        // دریافت کلمات از گوگل شیت
-        fetch(GAS_URL).then(res => res.json()).then(data => { allWords = data.words; });
+// ─── AVATAR ───
+function makeAvatarSection(rows){
+  const s=sec('// آواتار / تیپ شخصیتی');
+  if(!rows.length)return s;
+  const tMap={};rows.forEach(r=>{if(r.avatar)tMap[r.avatar]=(tMap[r.avatar]||0)+1;});
+  const arr=Object.entries(tMap).sort((a,b)=>b[1]-a[1]);
+  if(!arr.length)return s;
+  const tot=rows.length||1;const mx=arr[0][1];
+  const html=arr.map(([name,count],i)=>{
+    const av=makeAvatar(name,44);const p=pct(count,tot);
+    return `<div class="av-card${i===0?' top':''}">
+      ${i===0?'<div class="av-crown">👑</div>':''}
+      ${av?`<img class="av-img" src="${av}" width="46" height="46">`:'<div class="av-fb">🧬</div>'}
+      <div class="av-name">${name}</div>
+      <div class="av-count">${count}</div>
+      <div class="av-pct">${p}%</div>
+      <div class="av-bar-wrap"><div class="av-bar" style="width:${pct(count,mx)}%"></div></div>
+    </div>`;
+  }).join('');
+  s.innerHTML+=`<div class="av-grid">${html}</div>`;
+  return s;
+}
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('screen-' + id).classList.add('active');
-        }
+// ─── PROFILE ───
+function makeProfileSection(rows){
+  const s=sec('// پروفایل');
+  if(!rows.length)return s;
+  const pMap={};rows.forEach(r=>{if(r.profile)pMap[r.profile]=(pMap[r.profile]||0)+1;});
+  const arr=Object.entries(pMap).sort((a,b)=>b[1]-a[1]);
+  if(!arr.length)return s;
+  const tot=rows.length||1;
+  const html=arr.map(([name,count])=>{
+    const icon=name.includes('جسور')?'🔴':name.includes('محافظه')?'🔵':name.includes('متعادل')?'🟡':'⚪';
+    return `<div class="profile-card"><div class="profile-icon">${icon}</div><div><div class="profile-name">${name}</div><div class="profile-cnt">${count}</div><div class="profile-pct">${pct(count,tot)}%</div></div></div>`;
+  }).join('');
+  s.innerHTML+=`<div class="profile-grid">${html}</div>`;
+  return s;
+}
 
-        function createRoom() {
-            myName = document.getElementById('player-name').value || "پلیر";
-            roomCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-            db.ref('rooms/' + roomCode).set({
-                host: myId,
-                status: 'waiting',
-                players: { [myId]: { name: myName } }
-            });
-            initLobby();
-        }
+// ─── COHORT ───
+function makeCohortSection(rows){
+  const s=sec('// کوهورت سنی');
+  if(!rows.length)return s;
+  const cMap={};rows.forEach(r=>{if(r.cohort)cMap[r.cohort]=(cMap[r.cohort]||0)+1;});
+  if(!Object.keys(cMap).length)return s;
+  const html=Object.entries(cMap).sort((a,b)=>b[1]-a[1]).map(([name,count])=>{
+    const cohRows=rows.filter(r=>r.cohort===name);
+    const avgRisk=cohRows.length?Math.round(cohRows.filter(r=>r.risk>0).reduce((a,r)=>a+r.risk,0)/(cohRows.filter(r=>r.risk>0).length||1)):0;
+    return `<div class="cohort-card"><div class="cohort-name">${name}</div><div class="cohort-num">${count}</div><div class="cohort-risk">avg risk: ${avgRisk}</div></div>`;
+  }).join('');
+  s.innerHTML+=`<div class="cohort-grid">${html}</div>`;
+  return s;
+}
 
-        function joinRoom() {
-            roomCode = document.getElementById('join-code').value.toUpperCase();
-            myName = document.getElementById('player-name').value || "پلیر";
-            if(!roomCode) return alert("کد را بزن");
-            db.ref('rooms/' + roomCode + '/players/' + myId).set({ name: myName });
-            initLobby();
-        }
+// ─── Q SECTION ───
+function makeQSection(rows){
+  const s=sec('// تحلیل هر سوال');
+  if(!rows.length)return s;
+  const qMap={};
+  rows.forEach(r=>r.answers.forEach(a=>{if(!qMap[a.qId])qMap[a.qId]={ans:{},times:[]};qMap[a.qId].ans[a.answer]=(qMap[a.qId].ans[a.answer]||0)+1;if(a.time)qMap[a.qId].times.push(a.time);}));
+  if(!Object.keys(qMap).length){s.innerHTML+='<div style="color:var(--text3);font-family:\'Space Mono\',monospace;font-size:10px;padding:20px 0;text-align:center">// داده‌ای موجود نیست</div>';return s;}
+  const wrap=document.createElement('div');
+  Object.entries(qMap).sort((a,b)=>Number(a[0])-Number(b[0])).forEach(([qid,data])=>{
+    const arr=Object.entries(data.ans).sort((a,b)=>b[1]-a[1]);
+    const tot=arr.reduce((a,b)=>a+b[1],0)||1;
+    const avgTime=data.times.length?Math.round(data.times.reduce((a,b)=>a+b,0)/data.times.length*10)/10:null;
+    const div=document.createElement('div');div.className='q-card';
+    div.innerHTML=`<div class="q-head"><div class="q-num">سوال ${qid}</div>${avgTime?`<div class="q-time">⌀ ${avgTime}s</div>`:''}<div class="q-total">${tot} پاسخ</div></div>`
+    +arr.slice(0,5).map(([ans,cnt])=>`<div class="q-ans-row"><div class="q-ans-lbl" title="${esc(ans)}">${esc(ans)}</div><div class="q-bar-wrap"><div class="q-bar" style="width:${pct(cnt,tot)}%"></div></div><div class="q-pct">${pct(cnt,tot)}%</div></div>`).join('');
+    wrap.appendChild(div);
+  });
+  s.appendChild(wrap);
+  return s;
+}
 
-        function initLobby() {
-            showScreen('lobby');
-            document.getElementById('display-code').innerText = roomCode;
-            db.ref('rooms/' + roomCode).on('value', snap => {
-                const data = snap.val();
-                if(!data) return;
-                
-                // لیست پلیرها
-                const list = document.getElementById('player-list');
-                list.innerHTML = "";
-                Object.values(data.players).forEach(p => {
-                    list.innerHTML += `<div style="background:rgba(255,255,255,0.05);padding:10px;border-radius:10px">👤 ${p.name}</div>`;
-                });
+// ─── SPEED ───
+function makeSpeedSection(rows){
+  const s=sec('// سرعت پاسخ');
+  if(!rows.length)return s;
+  const times=rows.map(r=>r.totalTime).filter(t=>t>0);
+  if(!times.length)return s;
+  const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+  const fastest=Math.round(Math.min(...times));
+  const slowest=Math.round(Math.max(...times));
+  const spMap={};rows.forEach(r=>{if(r.speed)spMap[r.speed]=(spMap[r.speed]||0)+1;});
+  const spMax=Math.max(...Object.values(spMap),1);
+  const spHtml=Object.entries(spMap).sort((a,b)=>b[1]-a[1]).map(([sp,c])=>{
+    const col=sp.includes('سریع')?'var(--risk-low)':sp.includes('کند')?'var(--risk-high)':'var(--risk-mid)';
+    return `<div class="irow"><div class="irow-lbl">${sp}</div><div class="irow-bar-wrap"><div class="irow-bar" style="width:${pct(c,spMax)}%;background:${col}"></div></div><div class="irow-cnt">${c}</div></div>`;
+  }).join('');
+  const qTimes={};rows.forEach(r=>r.answers.forEach(a=>{if(a.time){if(!qTimes[a.qId])qTimes[a.qId]=[];qTimes[a.qId].push(a.time);}}));
+  const qAvg=Object.entries(qTimes).map(([qId,ts])=>({qId:parseInt(qId),avg:Math.round(ts.reduce((a,b)=>a+b,0)/ts.length*10)/10})).sort((a,b)=>a.qId-b.qId);
+  const qMax=Math.max(...qAvg.map(q=>q.avg),1);
+  const qHtml=qAvg.map(q=>{const col=q.avg<10?'var(--risk-low)':q.avg<20?'var(--risk-mid)':'var(--risk-high)';return `<div class="irow"><div class="irow-lbl">س${q.qId}</div><div class="irow-bar-wrap"><div class="irow-bar" style="width:${pct(q.avg,qMax)}%;background:${col}"></div></div><div class="irow-cnt">${q.avg}s</div></div>`;}).join('');
+  s.innerHTML+=`<div class="speed-3"><div class="sp-card"><div class="sp-val">${avg}s</div><div class="sp-lbl">میانگین</div></div><div class="sp-card"><div class="sp-val" style="color:var(--risk-low)">${fastest}s</div><div class="sp-lbl">سریع‌ترین</div></div><div class="sp-card"><div class="sp-val" style="color:var(--risk-high)">${slowest}s</div><div class="sp-lbl">کندترین</div></div></div>
+  <div class="grid2">
+    ${spHtml?`<div class="card"><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-bottom:8px">// دسته سرعت</div><div class="ilist">${spHtml}</div></div>`:''}
+    ${qHtml?`<div class="card"><div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text3);margin-bottom:8px">// میانگین زمان هر سوال</div><div class="ilist">${qHtml}</div></div>`:''}
+  </div>`;
+  return s;
+}
 
-                if(data.host === myId) document.getElementById('start-btn').style.display = "block";
-                if(data.status === 'playing') startGame(data);
-            });
-        }
+// ─── SCORE ───
+function makeScoreSection(rows){
+  const s=sec('// امتیازها');
+  const withS=rows.filter(r=>Object.keys(r.scores).length>0);
+  if(!withS.length)return s;
+  const qSc={};withS.forEach(r=>{Object.entries(r.scores).forEach(([q,v])=>{if(!qSc[q])qSc[q]=[];qSc[q].push(v);});});
+  const qAvg=Object.entries(qSc).map(([q,arr])=>({q:parseInt(q),avg:+(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1),min:Math.min(...arr),max:Math.max(...arr)})).sort((a,b)=>a.q-b.q);
+  const maxAvg=Math.max(...qAvg.map(q=>q.avg),1);
+  const colors=['#a855f7','#e879f9','#60a5fa','#34d399','#fbbf24','#fb923c','#f87171','#818cf8'];
+  const html=qAvg.map((q,i)=>`<div class="sc-row"><div class="sc-lbl">س${q.q}</div><div class="sc-bar-wrap"><div class="sc-bar" style="width:${pct(q.avg,maxAvg)}%;background:${colors[i%colors.length]}"></div></div><div class="sc-val">${q.avg} <span style="font-size:8px;color:var(--text3)">(${q.min}–${q.max})</span></div></div>`).join('');
+  s.innerHTML+=`<div class="card"><div class="score-bars">${html}</div></div>`;
+  return s;
+}
 
-        function hostStartGame() {
-            const wordObj = allWords[Math.floor(Math.random() * allWords.length)];
-            const players = Object.keys((document.getElementById('player-list').childNodes, {})); // ساده شده
-            db.ref('rooms/' + roomCode + '/players').once('value', snap => {
-                const ids = Object.keys(snap.val());
-                const spyId = ids[Math.floor(Math.random() * ids.length)];
-                db.ref('rooms/' + roomCode).update({
-                    status: 'playing',
-                    word: wordObj.w,
-                    spy: spyId,
-                    endTime: Date.now() + 300000
-                });
-            });
-        }
+// ─── TABLE ───
+function makeTableSection(rows){
+  const s=sec('// جدول کامل پاسخ‌دهندگان');
+  const wrap=document.createElement('div');
+  // filters
+  const genders=[...new Set(rows.map(r=>r.gender).filter(Boolean))];
+  const profiles=[...new Set(rows.map(r=>r.profile).filter(Boolean))];
+  const cohorts=[...new Set(rows.map(r=>r.cohort).filter(Boolean))];
+  wrap.innerHTML=`
+    <div class="tbl-filters">
+      <input class="tbl-search" id="tblSearch" placeholder="🔍 جستجو (نام / استان / آواتار)..." type="text">
+      <select class="tbl-select" id="tblGender" onchange="filterTable()">
+        <option value="all">همه جنسیت‌ها</option>
+        ${genders.map(g=>`<option value="${esc(g)}">${g}</option>`).join('')}
+      </select>
+      <select class="tbl-select" id="tblProfile" onchange="filterTable()">
+        <option value="all">همه پروفایل‌ها</option>
+        ${profiles.map(p=>`<option value="${esc(p)}">${p}</option>`).join('')}
+      </select>
+      <select class="tbl-select" id="tblCohort" onchange="filterTable()">
+        <option value="all">همه کوهورت‌ها</option>
+        ${cohorts.map(c=>`<option value="${esc(c)}">${c}</option>`).join('')}
+      </select>
+      <span class="tbl-count" id="tblCount">${rows.length} ردیف</span>
+    </div>
+    <div class="tbl-wrap"><table id="mainTable">
+      <thead><tr>
+        <th data-col="date" onclick="sortTable('date')">تاریخ</th>
+        <th data-col="name" onclick="sortTable('name')">نام</th>
+        <th data-col="age" onclick="sortTable('age')">سن</th>
+        <th data-col="gender" onclick="sortTable('gender')">جنسیت</th>
+        <th data-col="province" onclick="sortTable('province')">استان</th>
+        <th data-col="avatar">آواتار</th>
+        <th data-col="risk" onclick="sortTable('risk')">Risk</th>
+        <th data-col="profile" onclick="sortTable('profile')">پروفایل</th>
+        <th data-col="cohort" onclick="sortTable('cohort')">کوهورت</th>
+        <th data-col="speed" onclick="sortTable('speed')">سرعت</th>
+        <th data-col="totalTime" onclick="sortTable('totalTime')">زمان کل</th>
+        <th data-col="answers">جزئیات</th>
+      </tr></thead>
+      <tbody id="tblBody"></tbody>
+    </table></div>
+    <div class="pager" id="tblPager"></div>`;
+  s.appendChild(wrap);
+  document.getElementById('tblSearch').addEventListener('input',e=>{filterQ=e.target.value.trim().toLowerCase();tablePage=1;filterTable();});
+  return s;
+}
 
-        function startGame(data) {
-            showScreen('game');
-            window.myRole = (myId === data.spy) ? "🕵️ شما جاسوس هستید!" : "📍 کلمه: " + data.word;
-            
-            // تایمر
-            setInterval(() => {
-                const diff = data.endTime - Date.now();
-                if(diff <= 0) return document.getElementById('game-timer').innerText = "00:00";
-                const m = Math.floor(diff/60000);
-                const s = Math.floor((diff%60000)/1000);
-                document.getElementById('game-timer').innerText = `${m}:${s<10?'0':''}${s}`;
-            }, 1000);
-        }
+function filterTable(){
+  filterGender=document.getElementById('tblGender').value;
+  filterProfile=document.getElementById('tblProfile').value;
+  filterCohort=document.getElementById('tblCohort').value;
+  tableRows=allRows.filter(r=>{
+    if(filterGender!=='all'&&r.gender!==filterGender)return false;
+    if(filterProfile!=='all'&&r.profile!==filterProfile)return false;
+    if(filterCohort!=='all'&&r.cohort!==filterCohort)return false;
+    if(filterQ){const q=filterQ;if(!r.name.toLowerCase().includes(q)&&!r.province.toLowerCase().includes(q)&&!r.avatar.toLowerCase().includes(q))return false;}
+    return true;
+  });
+  document.getElementById('tblCount').textContent=tableRows.length+' ردیف';
+  tablePage=1;renderTable();
+}
 
-        function toggleRole() {
-            const card = document.getElementById('role-card');
-            if(card.innerText === "لمس برای دیدن کلمه") {
-                card.innerText = window.myRole;
-                card.style.background = "#fff";
-            } else {
-                card.innerText = "لمس برای دیدن کلمه";
-                card.style.background = "var(--primary)";
-            }
-        }
-    </script>
+function sortTable(col){
+  if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
+  document.querySelectorAll('th').forEach(th=>{th.classList.remove('sort-asc','sort-desc');if(th.dataset.col===col)th.classList.add(sortDir===1?'sort-asc':'sort-desc');});
+  tableRows.sort((a,b)=>{
+    let va=a[col]||'',vb=b[col]||'';
+    if(col==='risk'||col==='totalTime'||col==='age'){va=parseFloat(va)||0;vb=parseFloat(vb)||0;}
+    return va<vb?-sortDir:va>vb?sortDir:0;
+  });
+  renderTable();
+}
+
+function renderTable(){
+  const tbody=document.getElementById('tblBody');
+  if(!tbody)return;
+  const start=(tablePage-1)*PAGE_SIZE;
+  const page=tableRows.slice(start,start+PAGE_SIZE);
+  tbody.innerHTML=page.map((r,idx)=>{
+    const av=r.avatar?makeAvatar(r.avatar,32):null;
+    const rc=r.risk>0?riskClass(r.risk):'';
+    const rcolor=rc==='low'?'var(--risk-low)':rc==='mid'?'var(--risk-mid)':rc==='high'?'var(--risk-high)':'var(--text3)';
+    const rid=`row-${start+idx}`;
+    return `<tr onclick="toggleRow('${rid}',${start+idx})" style="cursor:pointer">
+      <td class="td-date">${fmtDate(r.date)}</td>
+      <td class="td-name">${esc(r.name)}</td>
+      <td>${r.age}</td>
+      <td>${r.gender||'—'}</td>
+      <td>${r.province||'—'}</td>
+      <td>${av?`<img class="td-avatar" src="${av}" width="32" height="32">`:`<span style="font-size:11px;color:var(--text3)">${esc(r.avatar)||'—'}</span>`}</td>
+      <td><span class="td-score" style="color:${rcolor}">${r.risk>0?r.risk.toFixed(1):'—'}</span></td>
+      <td><span class="pill a">${esc(r.profile)||'—'}</span></td>
+      <td><span class="pill g">${esc(r.cohort)||'—'}</span></td>
+      <td>${esc(r.speed)||'—'}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:10px">${r.totalTime>0?r.totalTime+'s':'—'}</td>
+      <td style="font-size:10px;color:var(--accent3)">▼</td>
+    </tr>
+    <tr class="expand-row" id="${rid}" style="display:none"><td colspan="12"><div class="expand-inner" id="${rid}-inner">...loading</div></td></tr>`;
+  }).join('');
+  renderPager();
+}
+
+const openRows=new Set();
+function toggleRow(rid,idx){
+  const row=document.getElementById(rid);
+  if(!row)return;
+  if(openRows.has(rid)){row.style.display='none';openRows.delete(rid);}
+  else{
+    row.style.display='';openRows.add(rid);
+    const inner=document.getElementById(rid+'-inner');
+    const r=tableRows[idx];
+    if(r&&r.answers.length){inner.innerHTML=r.answers.map(a=>`<div class="ans-pill"><span class="ans-q">س${a.qId}:</span><span>${esc(a.answer)}${a.time?` <span style="color:var(--accent3);font-size:8px">(${a.time}s)</span>`:''}</span></div>`).join('');}
+    else inner.innerHTML='<div style="color:var(--text3);font-size:10px;padding:4px">// پاسخی ثبت نشده</div>';
+  }
+}
+
+function renderPager(){
+  const pager=document.getElementById('tblPager');
+  if(!pager)return;
+  const total=Math.ceil(tableRows.length/PAGE_SIZE);
+  if(total<=1){pager.innerHTML='';return;}
+  let html=`<button class="pager-btn" onclick="goPage(${tablePage-1})" ${tablePage===1?'disabled':''}>‹ قبلی</button>`;
+  for(let i=1;i<=total;i++){if(i===1||i===total||Math.abs(i-tablePage)<=2)html+=`<button class="pager-btn${i===tablePage?' active':''}" onclick="goPage(${i})">${i}</button>`;else if(Math.abs(i-tablePage)===3)html+='<span style="color:var(--text3);padding:0 4px">…</span>';}
+  html+=`<button class="pager-btn" onclick="goPage(${tablePage+1})" ${tablePage===total?'disabled':''}>بعدی ›</button>`;
+  pager.innerHTML=html;
+}
+
+function goPage(p){const total=Math.ceil(tableRows.length/PAGE_SIZE);if(p<1||p>total)return;tablePage=p;renderTable();document.querySelector('.section:last-of-type')?.scrollIntoView({behavior:'smooth',block:'start'});}
+
+// ─── CHARTS ───
+let chart30Inst=null,riskChartInst=null;
+
+function renderCharts(d,rows){
+  // 7-day bar
+  if(d&&d.chart){
+    const bar=document.getElementById('bar7');
+    if(bar){
+      const mx=Math.max(...d.chart.map(x=>x.val),1);
+      bar.innerHTML=d.chart.map((x,i)=>{
+        const p=Math.round((x.val/mx)*100)||1;
+        const today=i===d.chart.length-1;
+        return `<div class="bar-col"><div class="bar-val">${x.val||''}</div><div class="bar-fill-wrap"><div class="bar-fill${today?' today':''}" style="height:${p}%"></div></div><div class="bar-day">${x.label||''}</div></div>`;
+      }).join('');
+    }
+  }
+  // 30-day trend from rows
+  const c30=document.getElementById('chart30');
+  if(c30&&rows.length){
+    const now=new Date();
+    const dayMap={};
+    for(let i=29;i>=0;i--){const d=new Date();d.setDate(now.getDate()-i);const k=d.toISOString().slice(0,10);dayMap[k]=0;}
+    rows.forEach(r=>{if(r.date){try{const k=new Date(r.date).toISOString().slice(0,10);if(dayMap.hasOwnProperty(k))dayMap[k]++;}catch(e){}}});
+    const labels=Object.keys(dayMap).map(k=>{const d=new Date(k);return(d.getMonth()+1)+'/'+(d.getDate());});
+    const vals=Object.values(dayMap);
+    if(chart30Inst)chart30Inst.destroy();
+    chart30Inst=new Chart(c30,{type:'line',data:{labels,datasets:[{data:vals,borderColor:'rgba(168,85,247,0.8)',backgroundColor:'rgba(168,85,247,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},color:'rgba(160,128,208,.6)',maxTicksLimit:8},grid:{color:'rgba(140,80,255,.06)'}},y:{ticks:{font:{size:9},color:'rgba(160,128,208,.6)',maxTicksLimit:5},grid:{color:'rgba(140,80,255,.06)'}}}}});
+  }
+  // Risk histogram
+  const rc=document.getElementById('riskChart');
+  if(rc&&rows.length){
+    const bins={'0-20':0,'20-40':0,'40-60':0,'60-80':0,'80-100':0};
+    rows.forEach(r=>{if(r.risk>0){const b=Math.floor(r.risk/20)*20;const k=`${b}-${b+20}`;if(bins.hasOwnProperty(k))bins[k]++;}});
+    if(riskChartInst)riskChartInst.destroy();
+    riskChartInst=new Chart(rc,{type:'bar',data:{labels:Object.keys(bins),datasets:[{data:Object.values(bins),backgroundColor:['rgba(52,211,153,.7)','rgba(52,211,153,.5)','rgba(251,191,36,.7)','rgba(239,68,68,.5)','rgba(239,68,68,.8)'],borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},color:'rgba(160,128,208,.7)'},grid:{color:'rgba(140,80,255,.05)'}},y:{ticks:{font:{size:9},color:'rgba(160,128,208,.7)',stepSize:1},grid:{color:'rgba(140,80,255,.05)'}}}}});
+  }
+  // init table
+  filterTable();
+}
+
+loadAll();
+</script>
 </body>
 </html>
